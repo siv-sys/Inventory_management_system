@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Expense Tracker Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        dark: '#1F2937',
+                        light: '#F9FAFB'
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-in': 'slideIn 0.3s ease-out',
+                        'bounce-in': 'bounceIn 0.6s ease-out'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-wallet text-2xl text-primary"></i>
+                    <h1 class="text-2xl font-bold text-gray-800">ExpenseTracker Pro</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-gray-600">
+                        <i class="fas fa-calendar-alt mr-2"></i>
+                        <span id="currentDate"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center transform hover:scale-105 transition duration-300">
+                <div class="text-2xl font-bold text-primary mb-2" id="totalExpenses">0</div>
+                <div class="text-gray-600">Total Expenses</div>
+                <i class="fas fa-receipt text-primary text-xl mt-2"></i>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center transform hover:scale-105 transition duration-300">
+                <div class="text-2xl font-bold text-secondary mb-2" id="totalAmount">$0.00</div>
+                <div class="text-gray-600">Total Spent</div>
+                <i class="fas fa-chart-line text-secondary text-xl mt-2"></i>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center transform hover:scale-105 transition duration-300">
+                <div class="text-2xl font-bold text-purple-600 mb-2" id="avgExpense">$0.00</div>
+                <div class="text-gray-600">Average/Expense</div>
+                <i class="fas fa-calculator text-purple-600 text-xl mt-2"></i>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 text-center transform hover:scale-105 transition duration-300">
+                <div class="text-2xl font-bold text-orange-600 mb-2" id="topCategory">-</div>
+                <div class="text-gray-600">Top Category</div>
+                <i class="fas fa-tag text-orange-600 text-xl mt-2"></i>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-2xl shadow-xl p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Quick Actions</h2>
+                        <div class="flex space-x-3">
+                            <button id="quickAdd" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 font-semibold">
+                                <i class="fas fa-plus mr-2"></i>Quick Add
+                            </button>
+                            <button id="exportCSV" class="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 font-semibold">
+                                <i class="fas fa-download mr-2"></i>Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters Section -->
+                <section class="bg-white rounded-2xl shadow-xl p-6 animate-fade-in">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-filter mr-3 text-primary"></i>Advanced Filters
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
+                            <input type="date" id="startDate" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary transition duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
+                            <input type="date" id="endDate" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary transition duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                            <select id="categoryFilter" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary transition duration-200">
+                                <option value="All">All Categories</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Search</label>
+                            <input type="text" id="searchFilter" placeholder="Search expenses..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary transition duration-200">
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="applyFilters" class="flex-1 bg-primary text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition duration-200 font-semibold">
+                                <i class="fas fa-search mr-2"></i>Apply
+                            </button>
+                            <button id="resetFilters" class="flex-1 bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 transition duration-200 font-semibold">
+                                <i class="fas fa-refresh mr-2"></i>Reset
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Add/Edit Expense Form -->
+                <section id="expenseFormSection" class="bg-white rounded-2xl shadow-xl p-6 animate-slide-in">
+                    <h2 id="formTitle" class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-plus-circle mr-3 text-primary"></i>Add New Expense
+                    </h2>
+                    <form id="expenseForm" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                                <input type="text" id="description" placeholder="e.g., Groceries at supermarket" 
+                                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary transition duration-200" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Amount ($)</label>
+                                <input type="number" id="amount" step="0.01" min="0" placeholder="0.00"
+                                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary transition duration-200" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                                <input type="date" id="date" 
+                                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary transition duration-200" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                                <select id="category" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary transition duration-200" required>
+                                    <option value="">Select a category</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button type="submit" id="submitButton" class="flex-1 bg-primary text-white py-4 rounded-xl hover:bg-blue-700 transition duration-200 font-semibold text-lg">
+                                <i class="fas fa-plus mr-2"></i>Add Expense
+                            </button>
+                            <button type="button" id="cancelButton" class="flex-1 bg-gray-500 text-white py-4 rounded-xl hover:bg-gray-600 transition duration-200 font-semibold text-lg hidden">
+                                <i class="fas fa-times mr-2"></i>Cancel
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Expenses List -->
+                <section class="bg-white rounded-2xl shadow-xl p-6 animate-fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-list-alt mr-3 text-primary"></i>Recent Expenses
+                        </h2>
+                        <div class="text-sm text-gray-600" id="expensesCount">Showing 0 expenses</div>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-50 border-b-2 border-gray-200">
+                                    <th class="text-left py-4 px-6 font-bold text-gray-700">Date</th>
+                                    <th class="text-left py-4 px-6 font-bold text-gray-700">Description</th>
+                                    <th class="text-left py-4 px-6 font-bold text-gray-700">Category</th>
+                                    <th class="text-left py-4 px-6 font-bold text-gray-700">Amount</th>
+                                    <th class="text-left py-4 px-6 font-bold text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expensesTable" class="divide-y divide-gray-100">
+                                <!-- Expenses will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="loadingExpenses" class="text-center py-8">
+                        <div class="loading-spinner"></div>
+                        <p class="text-gray-600 mt-2">Loading expenses...</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-8">
+                <!-- By Category Chart -->
+                <section class="bg-white rounded-2xl shadow-xl p-6 animate-fade-in">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-chart-pie mr-3 text-primary"></i>Spending by Category
+                    </h2>
+                    <div class="h-80">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- Monthly Trend Chart -->
+                <section class="bg-white rounded-2xl shadow-xl p-6 animate-fade-in">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-chart-line mr-3 text-primary"></i>Monthly Trend
+                    </h2>
+                    <div class="h-80">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- Quick Stats -->
+                <section class="bg-white rounded-2xl shadow-xl p-6 animate-fade-in">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-chart-bar mr-3 text-primary"></i>Quick Stats
+                    </h2>
+                    <div id="quickStats" class="space-y-4">
+                        <!-- Stats will be populated here -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Quick Add -->
+    <div id="quickAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 animate-bounce-in">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">Quick Add Expense</h3>
+            <form id="quickAddForm" class="space-y-4">
+                <input type="text" id="quickDescription" placeholder="Description" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary">
+                <input type="number" id="quickAmount" placeholder="Amount" step="0.01" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary">
+                <button type="submit" class="w-full bg-primary text-white py-3 rounded-xl hover:bg-blue-700 transition duration-200 font-semibold">
+                    Add Expense
+                </button>
+            </form>
+            <button onclick="expenseTracker.closeQuickAdd()" class="w-full mt-4 bg-gray-500 text-white py-3 rounded-xl hover:bg-gray-600 transition duration-200 font-semibold">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
