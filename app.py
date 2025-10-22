@@ -2,10 +2,19 @@ from flask import Flask, request, jsonify, render_template
 from models import Expense
 from database import db, init_db
 from datetime import datetime, timedelta
+import os
 import json
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+
+# Database configuration for cloud
+if os.environ.get('DATABASE_URL'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL').replace('postgres://', 'postgresql://')
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///expenses.db'
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
 init_db(app)
@@ -263,4 +272,5 @@ def get_categories():
     return jsonify(categories)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
